@@ -1,237 +1,227 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { Check, Zap, Loader2, MapPin, DollarSign, Briefcase } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
-interface Job {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  match: number;
-  status: "pending" | "applying" | "applied";
-}
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { ExternalLink, CheckCircle2, XCircle, Loader2, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+import { Job } from '@/utils/jobMatcher';
+import { ParsedResume, generateCustomResume } from '@/utils/resumeParser';
 
 const ApplyingLive = () => {
   const navigate = useNavigate();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
-  const [totalApplied, setTotalApplied] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      id: 1,
-      title: "Senior Software Engineer",
-      company: "TechCorp Inc.",
-      location: "Remote",
-      salary: "$120k - $150k",
-      match: 95,
-      status: "pending"
-    },
-    {
-      id: 2,
-      title: "Full Stack Developer",
-      company: "StartupXYZ",
-      location: "Hybrid - San Francisco",
-      salary: "$100k - $130k",
-      match: 88,
-      status: "pending"
-    },
-    {
-      id: 3,
-      title: "React Developer",
-      company: "Digital Agency",
-      location: "Remote",
-      salary: "$90k - $110k",
-      match: 92,
-      status: "pending"
-    },
-    {
-      id: 4,
-      title: "Frontend Engineer",
-      company: "E-commerce Giant",
-      location: "Onsite - New York",
-      salary: "$110k - $140k",
-      match: 90,
-      status: "pending"
-    },
-    {
-      id: 5,
-      title: "Software Developer",
-      company: "FinTech Solutions",
-      location: "Remote",
-      salary: "$95k - $125k",
-      match: 87,
-      status: "pending"
-    },
-    {
-      id: 6,
-      title: "Web Developer",
-      company: "Creative Studio",
-      location: "Hybrid - Austin",
-      salary: "$85k - $110k",
-      match: 84,
-      status: "pending"
-    },
-    {
-      id: 7,
-      title: "UI Developer",
-      company: "Design Systems Co",
-      location: "Remote",
-      salary: "$100k - $130k",
-      match: 91,
-      status: "pending"
-    },
-    {
-      id: 8,
-      title: "JavaScript Engineer",
-      company: "Cloud Platform",
-      location: "Remote",
-      salary: "$115k - $145k",
-      match: 93,
-      status: "pending"
-    }
-  ]);
 
   useEffect(() => {
-    if (currentJobIndex >= jobs.length) {
-      setIsComplete(true);
-      // Save applied jobs to localStorage for dashboard
-      localStorage.setItem("appliedJobs", JSON.stringify(jobs));
+    const storedJobs = localStorage.getItem('jobplexity_jobs');
+    const storedResume = localStorage.getItem('jobplexity_resume');
+
+    if (!storedJobs || !storedResume) {
+      toast.error('No job data found. Please complete onboarding first.');
+      navigate('/onboarding');
       return;
     }
 
-    // Set current job to applying
-    const applyTimer = setTimeout(() => {
-      setJobs(prev => prev.map((job, idx) => 
-        idx === currentJobIndex ? { ...job, status: "applying" as const } : job
-      ));
+    const loadedJobs: Job[] = JSON.parse(storedJobs);
+    const loadedResume: ParsedResume = JSON.parse(storedResume);
+    
+    setJobs(loadedJobs);
+    setParsedResume(loadedResume);
+  }, [navigate]);
 
-      // After 2 seconds, mark as applied and move to next
-      setTimeout(() => {
-        setJobs(prev => prev.map((job, idx) => 
-          idx === currentJobIndex ? { ...job, status: "applied" as const } : job
-        ));
-        setTotalApplied(prev => prev + 1);
-        setCurrentJobIndex(prev => prev + 1);
-      }, 2000);
+  useEffect(() => {
+    if (jobs.length === 0 || !parsedResume || isComplete) return;
+
+    const applyToJob = async (index: number) => {
+      if (index >= jobs.length) {
+        setIsComplete(true);
+        const appliedJobs = jobs.map(job => ({
+          ...job,
+          status: job.status === 'applied' ? 'applied' : job.status,
+        }));
+        localStorage.setItem('jobplexity_applied_jobs', JSON.stringify(appliedJobs));
+        toast.success('All applications completed!');
+        return;
+      }
+
+      // Update job to "applying" status
+      setJobs(prevJobs => {
+        const newJobs = [...prevJobs];
+        newJobs[index] = { ...newJobs[index], status: 'applying' };
+        return newJobs;
+      });
+
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Generate custom resume for this job
+      const customResume = generateCustomResume(
+        parsedResume,
+        jobs[index].title,
+        jobs[index].description
+      );
+
+      // Simulate application (90% success rate)
+      const success = Math.random() > 0.1;
+
+      setJobs(prevJobs => {
+        const newJobs = [...prevJobs];
+        newJobs[index] = {
+          ...newJobs[index],
+          status: success ? 'applied' : 'failed',
+          appliedAt: new Date(),
+          customResume,
+        };
+        return newJobs;
+      });
+
+      if (success) {
+        toast.success(`Applied to ${jobs[index].title} at ${jobs[index].company}`);
+      } else {
+        toast.error(`Failed to apply to ${jobs[index].title}. Manual application required.`);
+      }
+
+      setCurrentJobIndex(index + 1);
+    };
+
+    const timer = setTimeout(() => {
+      applyToJob(currentJobIndex);
     }, 500);
 
-    return () => clearTimeout(applyTimer);
-  }, [currentJobIndex, jobs.length]);
+    return () => clearTimeout(timer);
+  }, [currentJobIndex, jobs, parsedResume, isComplete]);
 
-  const progress = (totalApplied / jobs.length) * 100;
+  const progress = jobs.length > 0 ? (currentJobIndex / jobs.length) * 100 : 0;
+  const appliedCount = jobs.filter(j => j.status === 'applied').length;
+  const failedCount = jobs.filter(j => j.status === 'failed').length;
 
   return (
-    <div className="min-h-screen py-12 px-6 bg-background">
+    <div className="min-h-screen py-12 px-6 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto max-w-5xl">
-        {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-primary">AI AGENT ACTIVE</span>
+            <Loader2 className={`w-4 h-4 text-primary ${!isComplete ? 'animate-spin' : ''}`} />
+            <span className="text-sm font-medium text-primary">
+              {isComplete ? 'Applications Complete' : 'AI Agent Active'}
+            </span>
           </div>
-          <h1 className="font-serif text-4xl font-bold mb-4">
-            {isComplete ? "Application Batch Complete!" : "Applying to Jobs..."}
+          <h1 className="font-serif text-4xl font-bold mb-2">
+            {isComplete ? 'Application Session Complete!' : 'Applying to Jobs...'}
           </h1>
           <p className="text-muted-foreground">
             {isComplete 
-              ? `Successfully applied to ${totalApplied} jobs that match your profile`
-              : "Your AI agent is customizing and submitting applications based on your profile"
-            }
+              ? 'Your applications are ready to view in the dashboard'
+              : 'Watch as your AI agent customizes and submits applications'}
           </p>
         </div>
 
-        {/* Progress Stats */}
-        <Card className="p-6 mb-8 shadow-teal">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                {isComplete ? (
-                  <Check className="w-6 h-6 text-primary" />
-                ) : (
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                )}
-              </div>
-              <div>
-                <p className="text-2xl font-bold font-serif">{totalApplied} / {jobs.length}</p>
-                <p className="text-sm text-muted-foreground">Applications Submitted</p>
-              </div>
+        {/* Progress Card */}
+        <Card className="p-6 mb-6 shadow-card">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="font-semibold text-lg">Application Progress</h3>
+              <p className="text-sm text-muted-foreground">
+                {appliedCount} applied • {failedCount} failed • {jobs.length - currentJobIndex} pending
+              </p>
             </div>
             <div className="text-right">
-              <p className="text-lg font-semibold text-primary">{Math.round(progress)}%</p>
-              <p className="text-xs text-muted-foreground">Complete</p>
+              <div className="text-2xl font-bold text-primary">{Math.round(progress)}%</div>
+              <div className="text-xs text-muted-foreground">Complete</div>
             </div>
           </div>
           <Progress value={progress} className="h-3" />
         </Card>
 
-        {/* Job Application List */}
-        <div className="space-y-4 mb-8">
+        {/* Job List */}
+        <div className="space-y-3">
           {jobs.map((job, index) => (
-            <Card 
-              key={job.id} 
-              className={`p-6 transition-all duration-500 ${
-                job.status === "applying" 
-                  ? "shadow-teal border-primary animate-pulse" 
-                  : job.status === "applied"
-                  ? "opacity-75 bg-secondary/30"
-                  : "opacity-40"
+            <Card
+              key={job.id}
+              className={`p-4 transition-all duration-300 ${
+                job.status === 'applying' 
+                  ? 'ring-2 ring-primary shadow-teal' 
+                  : job.status === 'applied'
+                  ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+                  : job.status === 'failed'
+                  ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
+                  : 'opacity-60'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      job.status === "applied" 
-                        ? "bg-primary text-white" 
-                        : job.status === "applying"
-                        ? "bg-primary/20 text-primary"
-                        : "bg-muted text-muted-foreground"
-                    }`}>
-                      {job.status === "applied" ? (
-                        <Check className="w-5 h-5" />
-                      ) : job.status === "applying" ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Briefcase className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-serif text-xl font-semibold mb-1">{job.title}</h3>
-                      <p className="text-muted-foreground mb-2">{job.company}</p>
-                      <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {job.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          {job.salary}
-                        </span>
-                        <Badge variant="outline" className="text-primary border-primary">
-                          {job.match}% Match
-                        </Badge>
-                      </div>
-                    </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold truncate">{job.title}</h3>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded whitespace-nowrap">
+                      {job.match}% Match
+                    </span>
                   </div>
-                  {job.status === "applying" && (
-                    <div className="mt-3 pl-13">
-                      <p className="text-sm text-primary font-medium animate-pulse">
-                        <Zap className="w-4 h-4 inline mr-1" />
-                        Customizing resume and cover letter...
-                      </p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {job.company} • {job.location} • {job.salary}
+                  </p>
+                  
+                  {job.status === 'applying' && (
+                    <div className="flex items-center gap-2 text-sm text-primary">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Customizing resume and applying...</span>
                     </div>
                   )}
-                  {job.status === "applied" && (
-                    <div className="mt-3 pl-13">
-                      <p className="text-sm text-muted-foreground">
-                        ✓ Applied with custom resume and cover letter
-                      </p>
+                  
+                  {job.status === 'applied' && job.customResume && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => {
+                          const blob = new Blob([job.customResume!], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `resume-${job.company.replace(/\s+/g, '-')}.txt`;
+                          a.click();
+                        }}
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        View Custom Resume
+                      </Button>
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        View Job <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
+                  )}
+
+                  {job.status === 'failed' && (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 mt-2"
+                    >
+                      Try Manual Application <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+
+                <div className="flex-shrink-0">
+                  {job.status === 'pending' && (
+                    <div className="w-6 h-6 rounded-full border-2 border-muted" />
+                  )}
+                  {job.status === 'applying' && (
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  )}
+                  {job.status === 'applied' && (
+                    <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  )}
+                  {job.status === 'failed' && (
+                    <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                   )}
                 </div>
               </div>
@@ -239,22 +229,11 @@ const ApplyingLive = () => {
           ))}
         </div>
 
-        {/* Action Buttons */}
         {isComplete && (
-          <div className="text-center space-y-4">
-            <Card className="p-6 bg-gradient-to-br from-primary to-primary-dark text-white shadow-teal">
-              <h3 className="font-serif text-2xl font-bold mb-2">🎉 Batch Complete!</h3>
-              <p className="mb-4 opacity-90">
-                Your AI agent will continue applying to matching jobs 24/7
-              </p>
-              <Button 
-                variant="secondary" 
-                size="lg"
-                onClick={() => navigate("/dashboard")}
-              >
-                View Dashboard
-              </Button>
-            </Card>
+          <div className="text-center mt-8">
+            <Button size="lg" onClick={() => navigate('/dashboard')}>
+              View Dashboard
+            </Button>
           </div>
         )}
       </div>

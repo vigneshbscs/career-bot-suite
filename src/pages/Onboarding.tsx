@@ -7,18 +7,14 @@ import { Card } from "@/components/ui/card";
 import { Upload, ArrowRight, ArrowLeft, Check, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { parseResume, ParsedResume } from "@/utils/resumeParser";
+import { generatePersonalizedJobs } from "@/utils/jobMatcher";
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isExtractingResume, setIsExtractingResume] = useState(false);
-  const [extractedData, setExtractedData] = useState<{
-    name?: string;
-    email?: string;
-    phone?: string;
-    skills?: string[];
-    experience?: string;
-  } | null>(null);
+  const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const [formData, setFormData] = useState({
     jobTitle: "",
     workLocation: "",
@@ -34,33 +30,22 @@ const Onboarding = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const extractResumeData = async (file: File) => {
-    setIsExtractingResume(true);
-    toast.info("Extracting information from your resume...");
-    
-    // Simulate AI extraction (in production, this would call an AI API)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock extracted data
-    const extracted = {
-      name: "Alex Johnson",
-      email: "alex.johnson@email.com",
-      phone: "+1 (555) 123-4567",
-      skills: ["React", "TypeScript", "Node.js", "Python", "AWS"],
-      experience: "5 years in software development"
-    };
-    
-    setExtractedData(extracted);
-    setIsExtractingResume(false);
-    toast.success("Resume data extracted successfully!");
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, resume: file }));
-      await extractResumeData(file);
-      toast.success("Resume uploaded successfully!");
+      setIsExtractingResume(true);
+      toast.info("Extracting information from your resume...");
+      
+      try {
+        const parsed = await parseResume(file);
+        setParsedResume(parsed);
+        setIsExtractingResume(false);
+        toast.success("Resume data extracted successfully!");
+      } catch (error) {
+        setIsExtractingResume(false);
+        toast.error("Failed to extract resume data. Please try again.");
+      }
     }
   };
 
@@ -68,7 +53,24 @@ const Onboarding = () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // Complete onboarding - redirect to live applying page
+      if (!parsedResume || !formData.resume) {
+        toast.error("Please upload your resume first");
+        return;
+      }
+
+      // Generate personalized jobs and store in localStorage
+      const jobs = generatePersonalizedJobs(parsedResume, {
+        jobTitle: formData.jobTitle,
+        location: formData.workLocation,
+        jobType: formData.jobType,
+        salaryMin: parseInt(formData.salaryMin) || 0,
+        salaryMax: parseInt(formData.salaryMax) || 0,
+      });
+
+      localStorage.setItem('jobplexity_jobs', JSON.stringify(jobs));
+      localStorage.setItem('jobplexity_resume', JSON.stringify(parsedResume));
+      localStorage.setItem('jobplexity_profile', JSON.stringify(formData));
+
       toast.success("Profile created! Starting auto-apply...");
       setTimeout(() => navigate("/applying-live"), 1000);
     }
@@ -218,20 +220,20 @@ const Onboarding = () => {
               </div>
 
               {/* Extracted Resume Data */}
-              {extractedData && (
+              {parsedResume && (
                 <Card className="p-4 bg-primary/5 border-primary/20">
                   <div className="flex items-start gap-2 mb-3">
                     <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <h4 className="font-semibold text-sm mb-2">Extracted Information</h4>
                       <div className="space-y-1 text-sm">
-                        <p><span className="text-muted-foreground">Name:</span> {extractedData.name}</p>
-                        <p><span className="text-muted-foreground">Email:</span> {extractedData.email}</p>
-                        <p><span className="text-muted-foreground">Phone:</span> {extractedData.phone}</p>
-                        <p><span className="text-muted-foreground">Experience:</span> {extractedData.experience}</p>
+                        <p><span className="text-muted-foreground">Name:</span> {parsedResume.name}</p>
+                        <p><span className="text-muted-foreground">Email:</span> {parsedResume.email}</p>
+                        <p><span className="text-muted-foreground">Phone:</span> {parsedResume.phone}</p>
+                        <p><span className="text-muted-foreground">Summary:</span> {parsedResume.summary}</p>
                         <div className="flex flex-wrap gap-1 mt-2">
                           <span className="text-muted-foreground text-xs">Skills:</span>
-                          {extractedData.skills?.map((skill, i) => (
+                          {parsedResume.skills?.map((skill, i) => (
                             <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                               {skill}
                             </span>
