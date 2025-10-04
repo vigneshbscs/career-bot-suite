@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, Brain } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChatBot } from "@/components/ChatBot";
 
 const Index = () => {
   const { user } = useAuth();
@@ -128,8 +127,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      <ChatBot onStartApplying={() => navigate(user ? "/onboarding" : "/auth")} />
     </div>
   );
 };

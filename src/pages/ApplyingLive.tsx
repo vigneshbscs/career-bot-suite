@@ -73,19 +73,29 @@ const ApplyingLive = () => {
         jobs[index].description
       );
 
-      // Get interview grade to influence success rate
+      // Get interview grade and certificate to influence success rate
       const gradeData = localStorage.getItem('jobplexity_interview_grade');
-      let baseSuccessRate = 0.65; // 65% base success rate
+      const certData = localStorage.getItem('jobplexity_certificate');
       
+      let baseSuccessRate = 0.45; // 45% base success rate
+      
+      // Interview grade contributes up to 25%
       if (gradeData) {
         const grade = JSON.parse(gradeData);
-        // Higher grade increases success rate (max 85%)
-        baseSuccessRate = Math.min(0.85, 0.50 + (grade.score / 100) * 0.35);
+        baseSuccessRate += (grade.score / 100) * 0.25;
       }
       
-      // Random variance: ±15%
-      const variance = (Math.random() * 0.3) - 0.15;
-      const finalSuccessRate = Math.max(0.3, Math.min(0.85, baseSuccessRate + variance));
+      // Valid certificate contributes up to 20%
+      if (certData) {
+        const cert = JSON.parse(certData);
+        if (cert.valid && cert.score) {
+          baseSuccessRate += (cert.score / 100) * 0.20;
+        }
+      }
+      
+      // Random variance: ±10%
+      const variance = (Math.random() * 0.2) - 0.1;
+      const finalSuccessRate = Math.max(0.35, Math.min(0.90, baseSuccessRate + variance));
       
       const success = Math.random() < finalSuccessRate;
 

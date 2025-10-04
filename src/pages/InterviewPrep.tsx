@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Star, Award } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Upload, Star, Award, Rocket } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface InterviewGrade {
   score: number;
@@ -21,7 +21,15 @@ const InterviewPrep = () => {
   const [interviewGrade, setInterviewGrade] = useState<InterviewGrade | null>(null);
   const [certValidation, setCertValidation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const gradeData = localStorage.getItem('jobplexity_interview_grade');
+    const certData = localStorage.getItem('jobplexity_certificate');
+    setIsReady(!!(gradeData && certData));
+  }, [interviewGrade, certValidation]);
 
   const gradeInterview = async () => {
     if (!interviewTranscript.trim()) {
@@ -78,6 +86,7 @@ Respond ONLY with valid JSON, no other text.`
       if (jsonMatch) {
         const grade = JSON.parse(jsonMatch[0]);
         setInterviewGrade(grade);
+        localStorage.setItem('jobplexity_interview_grade', JSON.stringify(grade));
         toast({
           title: 'Interview Graded',
           description: `You scored ${grade.score}/100!`
@@ -121,7 +130,7 @@ Respond ONLY with valid JSON, no other text.`
                 {
                   parts: [
                     {
-                      text: "Analyze this certification image. Extract: 1) Certification name 2) Issuing organization 3) Issue date 4) Validity/expiration 5) Authenticity indicators. Provide a brief validation report (3-4 sentences)."
+                      text: `Analyze this certification image. Extract: 1) Certification name 2) Issuing organization 3) Issue date 4) Validity/expiration 5) Authenticity indicators. Return JSON: {"valid": true/false, "certificationName": "name", "organization": "org", "issueDate": "date", "score": 0-100}. Respond with valid JSON only.`
                     },
                     {
                       inline_data: {
@@ -138,10 +147,22 @@ Respond ONLY with valid JSON, no other text.`
 
         const data = await response.json();
         const validation = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to validate certification';
+        
+        let certData;
+        try {
+          const jsonMatch = validation.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            certData = JSON.parse(jsonMatch[0]);
+            localStorage.setItem('jobplexity_certificate', JSON.stringify(certData));
+          }
+        } catch (e) {
+          console.error('Failed to parse cert JSON:', e);
+        }
+        
         setCertValidation(validation);
         toast({
           title: 'Certification Analyzed',
-          description: 'See results below'
+          description: certData?.valid ? 'Certificate validated and saved!' : 'Analysis complete'
         });
         setLoading(false);
       };
@@ -160,10 +181,16 @@ Respond ONLY with valid JSON, no other text.`
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <Link to="/dashboard">
             <Button variant="outline">← Back to Dashboard</Button>
           </Link>
+          {isReady && (
+            <Button onClick={() => navigate('/onboarding')} size="lg" className="font-semibold">
+              <Rocket className="w-5 h-5 mr-2" />
+              Start Applying to Jobs
+            </Button>
+          )}
         </div>
 
         <h1 className="text-4xl font-serif font-bold mb-8">Interview Prep & Validation</h1>
