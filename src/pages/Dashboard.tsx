@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -16,15 +17,34 @@ import {
   Activity,
   Zap,
   ExternalLink,
-  Star
+  Star,
+  Bot,
+  Eye,
+  Mail,
+  Plus,
+  Sparkles
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Job } from "@/utils/jobMatcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+
+interface JobResult {
+  id: string;
+  company: string;
+  title: string;
+  matchScore: number;
+  snippet: string;
+}
 
 const Dashboard = () => {
   const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<JobResult[]>([]);
+  const [searchSummary, setSearchSummary] = useState('');
   const { user, logout } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedJobs = localStorage.getItem('jobplexity_applied_jobs');
@@ -47,6 +67,86 @@ const Dashboard = () => {
     { title: "DevOps Engineer", company: "DataFlow", time: "In 5 hours" },
     { title: "Mobile Developer", company: "AppStudio", time: "Tomorrow" }
   ];
+
+  const handleJobSearch = async () => {
+    if (!searchInput.trim()) return;
+
+    setIsSearching(true);
+    setSearchResults([]);
+    setSearchSummary('');
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyC7f1K1ST77E0ZY68Qhf8NaV71Rrb06BJk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                     text: `You are a friendly job-search assistant. Parse the user's job request and extract: job title, seniority level, location/timezone, salary range, years of experience, and number of applications they want.
+
+User request: "${searchInput}"
+
+Then generate ${Math.min(5, Math.floor(Math.random() * 3) + 3)} realistic job results with: company name, job title, match score (80-98%), and a brief snippet about the role.
+
+Return ONLY a JSON object with this structure:
+{
+  "summary": "1-2 line friendly summary of what you found",
+  "results": [
+    {
+      "id": "unique-id",
+      "company": "Company Name",
+      "title": "Job Title",
+      "matchScore": 95,
+      "snippet": "Brief description of the role"
+    }
+  ]
+}
+
+Make it conversational and helpful. If the request is unclear, use reasonable defaults (remote, mid-level, market rate salary).`
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm here to help! Could you rephrase that?";
+
+      try {
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          setSearchSummary(parsed.summary || '');
+          setSearchResults(parsed.results || []);
+        } else {
+          toast({
+            title: 'Search completed',
+            description: aiResponse,
+          });
+        }
+      } catch {
+        toast({
+          title: 'Search completed',
+          description: aiResponse,
+        });
+      }
+    } catch (error) {
+      console.error('Job search error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to search jobs. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -71,6 +171,104 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        {/* AI Job Search Bar */}
+        <Card className="mb-8 overflow-hidden shadow-teal border-primary/20">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h2 className="font-serif text-2xl font-bold">AI Job Search</h2>
+                  <p className="text-sm text-muted-foreground">Tell me what you're looking for and I'll find the best matches</p>
+                </div>
+              </div>
+              
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleJobSearch();
+                }}
+                className="flex gap-3"
+              >
+                <Input
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="e.g. 'Remote React dev, mid-level, EST, $80–120k — apply to 5 matches with Resume A'"
+                  disabled={isSearching}
+                  className="h-12 text-base border-primary/30 focus-visible:ring-primary"
+                />
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  disabled={isSearching || !searchInput.trim()}
+                  className="h-12 px-8"
+                >
+                  {isSearching ? (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5 mr-2" />
+                      Search
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* Search Results */}
+              {searchSummary && (
+                <div className="mt-6 p-4 bg-card rounded-lg border">
+                  <p className="text-sm font-medium mb-4">{searchSummary}</p>
+                  <div className="space-y-3">
+                    {searchResults.map((job) => (
+                      <Card key={job.id} className="p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold">{job.title}</h4>
+                              <Badge variant="secondary" className="text-xs">
+                                {job.matchScore}% match
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">{job.company}</p>
+                            <p className="text-sm text-muted-foreground">{job.snippet}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-3 h-3 mr-1" />
+                            Preview
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <FileText className="w-3 h-3 mr-1" />
+                            Cover Letter
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Briefcase className="w-3 h-3 mr-1" />
+                            Resume
+                          </Button>
+                          <Button size="sm">
+                            <Send className="w-3 h-3 mr-1" />
+                            Apply
+                          </Button>
+                          <Button size="sm" variant="ghost">
+                            <Plus className="w-3 h-3 mr-1" />
+                            Auto-Apply
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+
         {/* AI Agent Bar */}
         {appliedJobs.length > 0 && (
           <div className="mb-6 bg-gradient-to-r from-primary via-primary-light to-primary-dark text-white rounded-xl shadow-teal p-6">
