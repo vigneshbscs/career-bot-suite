@@ -71,6 +71,31 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        {/* AI Agent Bar */}
+        {appliedJobs.length > 0 && (
+          <div className="mb-6 bg-gradient-to-r from-primary via-primary-light to-primary-dark text-white rounded-xl shadow-teal p-6">
+            <div className="flex items-center justify-between max-w-5xl mx-auto">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Zap className="w-6 h-6 text-white animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold mb-1">AI Agent Active</h3>
+                  <p className="text-white/90 text-sm">
+                    Your AI is scanning 1,000+ jobs daily. Want to apply to more positions?
+                  </p>
+                </div>
+              </div>
+              <Link to="/applying-live">
+                <Button size="lg" variant="secondary" className="shadow-lg hover:scale-105 transition-transform">
+                  <Send className="w-4 h-4 mr-2" />
+                  Apply to More Jobs
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Welcome Section */}
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -84,7 +109,7 @@ const Dashboard = () => {
                 Interview Prep
               </Button>
             </Link>
-            <Link to="/onboarding">
+            <Link to="/applying-live">
               <Button>
                 <Send className="w-4 h-4 mr-2" />
                 Apply to More Jobs
@@ -156,7 +181,7 @@ const Dashboard = () => {
                     <p className="text-muted-foreground mb-4">
                       Complete your profile setup to start auto-applying to jobs
                     </p>
-                    <Link to="/onboarding">
+                    <Link to="/interview-prep">
                       <Button>Set Up Profile</Button>
                     </Link>
                   </Card>
