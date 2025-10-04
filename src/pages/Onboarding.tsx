@@ -58,6 +58,14 @@ const Onboarding = () => {
         return;
       }
 
+      // Check if interview prep is completed
+      const gradeData = localStorage.getItem('jobplexity_interview_grade');
+      if (!gradeData) {
+        toast.error("Please complete Interview Prep first to improve your success rate!");
+        setTimeout(() => navigate("/interview-prep"), 1500);
+        return;
+      }
+
       // Generate personalized jobs and store in localStorage
       const jobs = generatePersonalizedJobs(parsedResume, {
         jobTitle: formData.jobTitle,

@@ -73,8 +73,21 @@ const ApplyingLive = () => {
         jobs[index].description
       );
 
-      // Simulate application (90% success rate)
-      const success = Math.random() > 0.1;
+      // Get interview grade to influence success rate
+      const gradeData = localStorage.getItem('jobplexity_interview_grade');
+      let baseSuccessRate = 0.65; // 65% base success rate
+      
+      if (gradeData) {
+        const grade = JSON.parse(gradeData);
+        // Higher grade increases success rate (max 85%)
+        baseSuccessRate = Math.min(0.85, 0.50 + (grade.score / 100) * 0.35);
+      }
+      
+      // Random variance: ±15%
+      const variance = (Math.random() * 0.3) - 0.15;
+      const finalSuccessRate = Math.max(0.3, Math.min(0.85, baseSuccessRate + variance));
+      
+      const success = Math.random() < finalSuccessRate;
 
       setJobs(prevJobs => {
         const newJobs = [...prevJobs];

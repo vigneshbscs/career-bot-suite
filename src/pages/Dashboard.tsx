@@ -84,6 +84,12 @@ const Dashboard = () => {
                 Interview Prep
               </Button>
             </Link>
+            <Link to="/onboarding">
+              <Button>
+                <Send className="w-4 h-4 mr-2" />
+                Apply to More Jobs
+              </Button>
+            </Link>
             <Button variant="outline" onClick={logout}>Logout</Button>
           </div>
         </div>
