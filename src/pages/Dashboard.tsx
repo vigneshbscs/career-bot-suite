@@ -18,56 +18,16 @@ import {
 import { Link } from "react-router-dom";
 
 const Dashboard = () => {
-  // Mock data for MVP
+  // Get applications from localStorage (populated after live applying)
+  const savedJobs = localStorage.getItem("appliedJobs");
+  const appliedJobs = savedJobs ? JSON.parse(savedJobs) : [];
+  
   const stats = {
-    totalApplied: 247,
-    activeApplications: 189,
-    interviews: 12,
-    todayApplied: 34
+    totalApplied: appliedJobs.length,
+    activeApplications: appliedJobs.filter((j: any) => j.status !== "Interview Scheduled").length,
+    interviews: appliedJobs.filter((j: any) => j.status === "Interview Scheduled").length,
+    todayApplied: appliedJobs.length
   };
-
-  const mockJobs = [
-    {
-      id: 1,
-      title: "Senior Software Engineer",
-      company: "TechCorp Inc.",
-      location: "Remote",
-      salary: "$120k - $150k",
-      applied: "2 hours ago",
-      status: "Applied",
-      match: 95
-    },
-    {
-      id: 2,
-      title: "Full Stack Developer",
-      company: "StartupXYZ",
-      location: "Hybrid - San Francisco",
-      salary: "$100k - $130k",
-      applied: "5 hours ago",
-      status: "Applied",
-      match: 88
-    },
-    {
-      id: 3,
-      title: "React Developer",
-      company: "Digital Agency",
-      location: "Remote",
-      salary: "$90k - $110k",
-      applied: "1 day ago",
-      status: "Under Review",
-      match: 92
-    },
-    {
-      id: 4,
-      title: "Frontend Engineer",
-      company: "E-commerce Giant",
-      location: "Onsite - New York",
-      salary: "$110k - $140k",
-      applied: "2 days ago",
-      status: "Interview Scheduled",
-      match: 90
-    }
-  ];
 
   const upcomingApplications = [
     { title: "Backend Engineer", company: "CloudTech", time: "In 2 hours" },
@@ -155,16 +115,28 @@ const Dashboard = () => {
               </TabsList>
 
               <TabsContent value="applied" className="space-y-4 mt-6">
-                {mockJobs.map((job) => (
-                  <Card key={job.id} className="p-6 hover:shadow-teal transition-all cursor-pointer">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-serif text-xl font-semibold mb-1">{job.title}</h3>
-                        <p className="text-muted-foreground mb-2">{job.company}</p>
-                        <div className="flex flex-wrap items-center gap-3 text-sm">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {job.location}
+                {appliedJobs.length === 0 ? (
+                  <Card className="p-12 text-center">
+                    <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <h3 className="font-serif text-xl font-semibold mb-2">No Applications Yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Complete your profile setup to start auto-applying to jobs
+                    </p>
+                    <Link to="/onboarding">
+                      <Button>Set Up Profile</Button>
+                    </Link>
+                  </Card>
+                ) : (
+                  appliedJobs.map((job: any) => (
+                    <Card key={job.id} className="p-6 hover:shadow-teal transition-all cursor-pointer">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="font-serif text-xl font-semibold mb-1">{job.title}</h3>
+                          <p className="text-muted-foreground mb-2">{job.company}</p>
+                          <div className="flex flex-wrap items-center gap-3 text-sm">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {job.location}
                           </span>
                           <span className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
@@ -192,9 +164,10 @@ const Dashboard = () => {
                         <FileText className="w-4 h-4 mr-1" />
                         View Resume
                       </Button>
-                    </div>
-                  </Card>
-                ))}
+                      </div>
+                    </Card>
+                  ))
+                )}
               </TabsContent>
 
               <TabsContent value="upcoming" className="space-y-4 mt-6">
