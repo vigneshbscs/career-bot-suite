@@ -15,7 +15,8 @@ import {
   Calendar,
   Activity,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Star
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Job } from "@/utils/jobMatcher";
@@ -76,7 +77,15 @@ const Dashboard = () => {
             <h1 className="font-serif text-4xl font-bold mb-2">Welcome back, {user?.name || 'User'}!</h1>
             <p className="text-muted-foreground">Your AI agent has been busy applying to jobs for you</p>
           </div>
-          <Button variant="outline" onClick={logout}>Logout</Button>
+          <div className="flex gap-2">
+            <Link to="/interview-prep">
+              <Button variant="outline">
+                <Star className="w-4 h-4 mr-2" />
+                Interview Prep
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={logout}>Logout</Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -219,12 +228,14 @@ const Dashboard = () => {
 
               <TabsContent value="interviews" className="mt-6">
                 <Card className="p-8 text-center">
-                  <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-                  <h3 className="font-serif text-xl font-semibold mb-2">Interview Grading</h3>
+                  <Star className="w-12 h-12 text-primary mx-auto mb-4" />
+                  <h3 className="font-serif text-xl font-semibold mb-2">Interview Grading & Certification</h3>
                   <p className="text-muted-foreground mb-4">
-                    Coming soon: AI-powered interview analysis and preparation
+                    Get AI-powered interview feedback and validate your certifications
                   </p>
-                  <Badge>Feature in Development</Badge>
+                  <Link to="/interview-prep">
+                    <Button>Try Interview Prep Tools</Button>
+                  </Link>
                 </Card>
               </TabsContent>
             </Tabs>
@@ -268,10 +279,12 @@ const Dashboard = () => {
                   <Briefcase className="w-4 h-4 mr-2" />
                   Update Preferences
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Award className="w-4 h-4 mr-2" />
-                  Interview Prep
-                </Button>
+                <Link to="/interview-prep" className="w-full">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Star className="w-4 h-4 mr-2" />
+                    Interview Prep
+                  </Button>
+                </Link>
               </div>
             </Card>
 

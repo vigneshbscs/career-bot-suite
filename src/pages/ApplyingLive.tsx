@@ -14,6 +14,7 @@ const ApplyingLive = () => {
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [typingText, setTypingText] = useState('');
 
   useEffect(() => {
     const storedJobs = localStorage.getItem('jobplexity_jobs');
@@ -54,8 +55,16 @@ const ApplyingLive = () => {
         return newJobs;
       });
 
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Typing animation for current job
+      const jobText = `Customizing resume for ${jobs[index].title} at ${jobs[index].company}...`;
+      let currentText = '';
+      for (let i = 0; i < jobText.length; i++) {
+        currentText += jobText[i];
+        setTypingText(currentText);
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Generate custom resume for this job
       const customResume = generateCustomResume(
@@ -117,6 +126,16 @@ const ApplyingLive = () => {
               : 'Watch as your AI agent customizes and submits applications'}
           </p>
         </div>
+
+        {/* Typing Animation */}
+        {typingText && !isComplete && (
+          <Card className="p-4 mb-4 bg-primary/5 border-primary/20">
+            <p className="text-sm font-mono text-primary flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {typingText}
+            </p>
+          </Card>
+        )}
 
         {/* Progress Card */}
         <Card className="p-6 mb-6 shadow-card">

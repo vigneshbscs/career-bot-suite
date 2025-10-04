@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, Brain } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { ChatBot } from "@/components/ChatBot";
 
 const Index = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen">
@@ -47,16 +49,11 @@ const Index = () => {
               custom resumes and cover letters while you focus on interviews.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <Link to={user ? "/onboarding" : "/auth"}>
                 <Button size="lg" className="group">
                   Start Auto-Applying
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/dashboard">
-                <Button size="lg" variant="outline">
-                  View Demo Dashboard
                 </Button>
               </Link>
             </div>
@@ -131,6 +128,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <ChatBot onStartApplying={() => navigate(user ? "/onboarding" : "/auth")} />
     </div>
   );
 };
