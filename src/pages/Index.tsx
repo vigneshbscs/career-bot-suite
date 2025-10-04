@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Zap, Target, Brain, Search, Sparkles, FileText, Mail, Briefcase, Plus, Eye } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface JobResult {
@@ -23,6 +23,21 @@ const Index = () => {
   const [searchResults, setSearchResults] = useState<JobResult[]>([]);
   const [searchSummary, setSearchSummary] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const fullText = "Applies for Jobs 24/7";
+
+  useEffect(() => {
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index <= fullText.length) {
+        setTypedText(fullText.slice(0, index));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleJobSearch = async () => {
     if (!searchInput.trim()) return;
@@ -99,7 +114,13 @@ Return ONLY valid JSON.`
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-background"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float-delayed"></div>
+      </div>
       {/* Header */}
       <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50">
         <div className="container mx-auto px-6 py-4">
@@ -128,34 +149,92 @@ Return ONLY valid JSON.`
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="container mx-auto max-w-6xl">
-          {/* AI Job Search Bar */}
-          <div className="mb-12 max-w-3xl mx-auto">
-            <div className="bg-gradient-to-r from-primary/10 via-primary-light/10 to-primary/10 rounded-2xl p-8 shadow-teal border border-primary/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="font-serif text-2xl font-bold">AI Job Search</h2>
+      {/* Header */}
+      <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary-light rounded-lg flex items-center justify-center">
+                <Zap className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
-              <p className="text-muted-foreground mb-4">
+              <span className="font-serif text-lg sm:text-2xl font-bold">JOBPLEXITY</span>
+            </div>
+            <nav className="flex items-center gap-3 sm:gap-6">
+              {user ? (
+                <Link to="/dashboard">
+                  <Button size="sm">Go to Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/onboarding" className="hidden sm:block text-sm hover:text-primary transition-colors">Get Started</Link>
+                  <Link to="/auth">
+                    <Button size="sm">Sign In</Button>
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-12 sm:pb-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-3 sm:px-4 py-2 rounded-full mb-6">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              <span className="text-xs sm:text-sm font-medium text-primary">AI-POWERED JOB PLATFORM</span>
+            </div>
+            
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Your AI Agent
+              <br />
+              <span className="text-primary min-h-[1.2em] inline-block">
+                {typedText}<span className="animate-pulse">|</span>
+              </span>
+            </h1>
+            
+            <p className="text-base sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto px-4">
+              Stop spending hours on applications. Let our AI apply to thousands of jobs with 
+              custom resumes and cover letters while you focus on interviews.
+            </p>
+            
+            <div className="flex justify-center">
+              <Link to={user ? "/onboarding" : "/auth"}>
+                <Button size="lg" className="group">
+                  Start Auto-Applying
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* AI Job Search Bar - Moved below hero */}
+          <div className="mt-16 max-w-3xl mx-auto">
+            <div className="bg-gradient-to-r from-primary/10 via-primary-light/10 to-primary/10 rounded-2xl p-6 sm:p-8 shadow-teal border border-primary/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold">AI Job Search</h2>
+              </div>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Tell me what you want: e.g. "Remote React dev, mid-level, EST, $50–80k — apply to 5 matches with Resume A"
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleJobSearch()}
                   placeholder="Describe your ideal job..."
-                  className="flex-1 h-12 text-base"
+                  className="flex-1 h-12 text-sm sm:text-base"
                   disabled={isSearching}
                 />
                 <Button 
                   onClick={handleJobSearch} 
                   size="lg"
                   disabled={isSearching || !searchInput.trim()}
+                  className="w-full sm:w-auto"
                 >
                   {isSearching ? (
                     <>
@@ -183,34 +262,34 @@ Return ONLY valid JSON.`
                     <div key={job.id} className="p-4 bg-background rounded-xl border border-border hover:shadow-card transition-all">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{job.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-sm sm:text-base">{job.title}</h3>
                             <Badge variant="secondary" className="text-xs">
                               {job.matchScore}% match
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">{job.company}</p>
-                          <p className="text-sm mt-2">{job.snippet}</p>
+                          <p className="text-xs sm:text-sm mt-2">{job.snippet}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="text-xs">
                           <Eye className="w-3 h-3 mr-1" />
                           Preview
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="text-xs">
                           <FileText className="w-3 h-3 mr-1" />
                           Cover Letter
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="text-xs">
                           <Mail className="w-3 h-3 mr-1" />
                           Resume
                         </Button>
-                        <Button size="sm">
+                        <Button size="sm" className="text-xs">
                           <Briefcase className="w-3 h-3 mr-1" />
                           Apply
                         </Button>
-                        <Button size="sm" variant="secondary">
+                        <Button size="sm" variant="secondary" className="text-xs">
                           <Plus className="w-3 h-3 mr-1" />
                           Auto-Apply
                         </Button>
@@ -222,43 +301,16 @@ Return ONLY valid JSON.`
             </div>
           </div>
 
-          <div className="text-center animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-primary">AI-POWERED JOB PLATFORM</span>
-            </div>
-            
-            <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Your AI Agent
-              <br />
-              <span className="text-primary">Applies for Jobs 24/7</span>
-            </h1>
-            
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Stop spending hours on applications. Let our AI apply to thousands of jobs with 
-              custom resumes and cover letters while you focus on interviews.
-            </p>
-            
-            <div className="flex justify-center">
-              <Link to={user ? "/onboarding" : "/auth"}>
-                <Button size="lg" className="group">
-                  Start Auto-Applying
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mt-16 sm:mt-20 px-4">
             {[
               { number: "10,000+", label: "Jobs Applied Daily" },
               { number: "95%", label: "Application Success Rate" },
               { number: "24/7", label: "Auto-Apply Active" }
             ].map((stat, i) => (
-              <div key={i} className="text-center p-6 bg-card rounded-2xl shadow-card border border-border">
-                <div className="text-4xl font-bold text-primary font-serif mb-2">{stat.number}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
+              <div key={i} className="text-center p-6 bg-card rounded-2xl shadow-card border border-border hover-scale">
+                <div className="text-3xl sm:text-4xl font-bold text-primary font-serif mb-2">{stat.number}</div>
+                <div className="text-sm sm:text-base text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -266,14 +318,14 @@ Return ONLY valid JSON.`
       </section>
 
       {/* Features */}
-      <section className="py-20 px-6">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold mb-4">How Jobplexity Works</h2>
-            <p className="text-muted-foreground text-lg">Three simple steps to automate your job search</p>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-4">How Jobplexity Works</h2>
+            <p className="text-muted-foreground text-base sm:text-lg">Three simple steps to automate your job search</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 icon: Target,
@@ -291,12 +343,12 @@ Return ONLY valid JSON.`
                 description: "Monitor all applications in your dashboard. Get interview grading and preparation tips. Focus on landing offers, not filling forms."
               }
             ].map((feature, i) => (
-              <div key={i} className="p-8 bg-card rounded-2xl shadow-card border border-border hover:shadow-teal transition-all duration-300">
+              <div key={i} className="p-6 sm:p-8 bg-card rounded-2xl shadow-card border border-border hover:shadow-teal transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${i * 0.1}s` }}>
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-serif text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h3 className="font-serif text-lg sm:text-xl font-semibold mb-3">{feature.title}</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -304,11 +356,11 @@ Return ONLY valid JSON.`
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
         <div className="container mx-auto max-w-4xl">
-          <div className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-3xl p-12 text-center shadow-teal">
-            <h2 className="font-serif text-4xl font-bold mb-4">Ready to Land Your Dream Job?</h2>
-            <p className="text-lg mb-8 opacity-90">Join thousands who've automated their job search with AI</p>
+          <div className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-3xl p-8 sm:p-12 text-center shadow-teal">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-4">Ready to Land Your Dream Job?</h2>
+            <p className="text-base sm:text-lg mb-8 opacity-90">Join thousands who've automated their job search with AI</p>
             <Link to="/onboarding">
               <Button size="lg" variant="secondary" className="group">
                 Get Started Free

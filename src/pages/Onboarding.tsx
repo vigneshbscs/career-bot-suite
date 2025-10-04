@@ -249,23 +249,29 @@ Respond ONLY with valid JSON, no other text.`
   const progress = (step / 5) * 100;
 
   return (
-    <div className="min-h-screen py-12 px-6">
+    <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-background"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float-delayed"></div>
+      </div>
       <div className="container mx-auto max-w-3xl">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 sm:mb-12">
           <Link to="/" className="inline-flex items-center gap-2 mb-6 text-sm text-muted-foreground hover:text-primary">
             <ArrowLeft className="w-4 h-4" /> Back to Home
           </Link>
-          <h1 className="font-serif text-4xl font-bold mb-4">Complete Your Profile</h1>
-          <p className="text-muted-foreground">5 steps to optimize your job applications</p>
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold mb-4">Complete Your Profile</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">5 steps to optimize your job applications</p>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Progress value={progress} className="h-2 mb-4" />
           <div className="flex justify-between text-xs text-muted-foreground">
             {steps.map((s) => (
-              <span key={s.number} className={step >= s.number ? 'text-primary font-medium' : ''}>
+              <span key={s.number} className={`${step >= s.number ? 'text-primary font-medium' : ''} hidden sm:inline`}>
                 {s.title}
               </span>
             ))}
@@ -273,7 +279,7 @@ Respond ONLY with valid JSON, no other text.`
         </div>
 
         {/* Step Content */}
-        <Card className="p-8 shadow-card">
+        <Card className="p-6 sm:p-8 shadow-card">
           {/* Step 1: Job Preferences */}
           {step === 1 && (
             <div className="space-y-6">
