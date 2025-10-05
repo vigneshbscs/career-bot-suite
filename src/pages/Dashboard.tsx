@@ -245,25 +245,38 @@ Make it conversational and helpful. If the request is unclear, use reasonable de
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-3 h-3 mr-1" />
-                            Preview
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <FileText className="w-3 h-3 mr-1" />
-                            Cover Letter
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Briefcase className="w-3 h-3 mr-1" />
-                            Resume
-                          </Button>
-                          <Button size="sm">
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              const profile = JSON.parse(localStorage.getItem('jobplexity_profile') || '{}');
+                              const resume = JSON.parse(localStorage.getItem('jobplexity_resume') || '{}');
+                              
+                              const newJob = {
+                                id: job.id,
+                                title: job.title,
+                                company: job.company,
+                                match: job.matchScore,
+                                location: profile.workLocation || 'Remote',
+                                salary: `$${profile.salaryMin || 50}k-${profile.salaryMax || 100}k`,
+                                status: 'applied',
+                                customResume: `Custom resume for ${job.title} at ${job.company}`,
+                                appliedDate: new Date().toISOString()
+                              };
+                              
+                              const existing = JSON.parse(localStorage.getItem('jobplexity_applied_jobs') || '[]');
+                              localStorage.setItem('jobplexity_applied_jobs', JSON.stringify([...existing, newJob]));
+                              
+                              toast({
+                                title: 'Application Submitted',
+                                description: `Applied to ${job.title} at ${job.company}`,
+                              });
+                              
+                              setSearchResults(prev => prev.filter(j => j.id !== job.id));
+                            }}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          >
                             <Send className="w-3 h-3 mr-1" />
-                            Apply
-                          </Button>
-                          <Button size="sm" variant="ghost">
-                            <Plus className="w-3 h-3 mr-1" />
-                            Auto-Apply
+                            Apply Now
                           </Button>
                         </div>
                       </Card>

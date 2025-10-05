@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,7 @@ const Onboarding = () => {
   const [interviewGrade, setInterviewGrade] = useState<InterviewGrade | null>(null);
   const [certFile, setCertFile] = useState<File | null>(null);
   const [certData, setCertData] = useState<CertificateData | null>(null);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: "",
     workLocation: "",
@@ -47,6 +48,29 @@ const Onboarding = () => {
     jobMatches: "",
     resume: null as File | null,
   });
+
+  // Check if profile is already complete and load existing data
+  useEffect(() => {
+    const existingProfile = localStorage.getItem('jobplexity_profile');
+    const existingResume = localStorage.getItem('jobplexity_resume');
+    const existingGrade = localStorage.getItem('jobplexity_interview_grade');
+    const existingCert = localStorage.getItem('jobplexity_certificate');
+
+    if (existingProfile && existingResume && existingGrade && existingCert) {
+      setIsProfileComplete(true);
+      const profile = JSON.parse(existingProfile);
+      const resumeData = JSON.parse(existingResume);
+      const gradeData = JSON.parse(existingGrade);
+      const certDataParsed = JSON.parse(existingCert);
+
+      setFormData(profile);
+      setParsedResume(resumeData);
+      setInterviewGrade(gradeData);
+      setCertData(certDataParsed);
+      
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -225,9 +249,19 @@ Respond ONLY with valid JSON, no other text.`
         salaryMax: parseInt(formData.salaryMax) || 0,
       });
 
+      // Store all data as JSON
+      const completeProfile = {
+        ...formData,
+        resumeData: parsedResume,
+        interviewGrade,
+        certificateData: certData,
+        completedAt: new Date().toISOString()
+      };
+
       localStorage.setItem('jobplexity_jobs', JSON.stringify(jobs));
       localStorage.setItem('jobplexity_resume', JSON.stringify(parsedResume));
       localStorage.setItem('jobplexity_profile', JSON.stringify(formData));
+      localStorage.setItem('jobplexity_complete_profile', JSON.stringify(completeProfile));
 
       toast.success("Profile complete! Starting auto-apply...");
       setTimeout(() => navigate("/applying-live"), 1000);

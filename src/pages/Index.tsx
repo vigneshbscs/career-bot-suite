@@ -24,20 +24,39 @@ const Index = () => {
   const [searchSummary, setSearchSummary] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [typedText, setTypedText] = useState("");
-  const fullText = "Applies for Jobs 24/7";
+  const [textIndex, setTextIndex] = useState(0);
+  const texts = [
+    "Applies for Jobs 24/7",
+    "Creates Custom Resumes",
+    "Writes Cover Letters",
+    "Finds Perfect Matches",
+    "Automates Applications"
+  ];
 
   useEffect(() => {
-    let index = 0;
-    const timer = setInterval(() => {
-      if (index <= fullText.length) {
-        setTypedText(fullText.slice(0, index));
-        index++;
-      } else {
-        clearInterval(timer);
+    let charIndex = 0;
+    let isDeleting = false;
+    let currentText = texts[textIndex];
+
+    const type = () => {
+      if (!isDeleting && charIndex <= currentText.length) {
+        setTypedText(currentText.slice(0, charIndex));
+        charIndex++;
+        setTimeout(type, 100);
+      } else if (!isDeleting && charIndex > currentText.length) {
+        setTimeout(() => { isDeleting = true; type(); }, 2000);
+      } else if (isDeleting && charIndex >= 0) {
+        setTypedText(currentText.slice(0, charIndex));
+        charIndex--;
+        setTimeout(type, 50);
+      } else if (isDeleting && charIndex < 0) {
+        isDeleting = false;
+        setTextIndex((prev) => (prev + 1) % texts.length);
       }
-    }, 100);
-    return () => clearInterval(timer);
-  }, []);
+    };
+
+    type();
+  }, [textIndex]);
 
   const handleJobSearch = async () => {
     if (!searchInput.trim()) return;
@@ -273,25 +292,15 @@ Return ONLY valid JSON.`
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <Button size="sm" variant="outline" className="text-xs">
-                          <Eye className="w-3 h-3 mr-1" />
-                          Preview
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs">
-                          <FileText className="w-3 h-3 mr-1" />
-                          Cover Letter
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs">
-                          <Mail className="w-3 h-3 mr-1" />
-                          Resume
-                        </Button>
-                        <Button size="sm" className="text-xs">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            navigate('/onboarding');
+                          }}
+                          className="text-xs"
+                        >
                           <Briefcase className="w-3 h-3 mr-1" />
-                          Apply
-                        </Button>
-                        <Button size="sm" variant="secondary" className="text-xs">
-                          <Plus className="w-3 h-3 mr-1" />
-                          Auto-Apply
+                          Complete Profile to Apply
                         </Button>
                       </div>
                     </div>
